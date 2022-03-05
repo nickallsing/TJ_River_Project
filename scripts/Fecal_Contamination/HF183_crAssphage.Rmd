@@ -1,0 +1,192 @@
+```{r include=FALSE}
+library(propr)
+library(magrittr)
+library(zCompositions)
+library(dplyr)
+library(ggplot2)
+library(tidyverse) 
+library(readr)
+library(mixOmics)
+library(selbal)
+library(vegan)
+library(scales)
+library(ggthemes)
+require(gtools)
+library(viridis)
+library(ggpubr)
+library(corrplot)
+library(psych)
+library(rstatix)
+library(png)
+library(grid)
+library(gridExtra)
+library(cowplot)
+library(data.table)
+```
+```{r}
+#Read in metagenome, HF183 and crAssphage row names
+hf183_names <- read.csv('../../data/Fecal_Contamination/input/HF183_names.csv',sep=',',row.names = 1,header = 1,check.names=FALSE)
+crAss_name <- read.csv('../../data/Fecal_Contamination/input/crAssphage_name.csv',sep=',',row.names = 1,header = 1,check.names=FALSE)
+meta <- read.csv('../../data/Fecal_Contamination/input/metagenomemodified.csv',sep=',',row.names = 1,header = 1,check.names=FALSE)
+```
+```{r}
+#Extract data based on the row names
+hf183_row_names_df_to_remove <-c(row.names(hf183_names))
+crAss_row_names_df_to_remove <-c(row.names(crAss_name))
+hf183_extract <- meta[(row.names(meta) %in% hf183_row_names_df_to_remove),]
+crAss_extract <- meta[(row.names(meta) %in% crAss_row_names_df_to_remove),]
+```
+```{r}
+#Replace NAs, if any
+hf183_extract[is.na(hf183_extract)] <- 0
+crAss_extract[is.na(crAss_extract)] <- 0
+```
+```{r}
+#Combine HF183 counts for each sample, transpose first
+hf183_t <- t(hf183_extract)
+hf183_sum <- rowSums(hf183_t)
+hf183_sum <- data.frame(hf183_sum)
+```
+```{r}
+#Transpose and append crAss data
+crAss_t <-t(crAss_extract)
+fecal_levels <- hf183_sum
+fecal_levels$crAssphage = as.numeric(crAss_t)
+```
+```{r}
+#remove hf183 and crassphage rows from each sample in metagenomic data
+fecal_row_names_df_to_remove <-c(row.names(hf183_names),row.names(crAss_name))
+no_hf183_crAss_meta <- meta[!(rownames(meta) %in% fecal_row_names_df_to_remove),]
+no_hf183_crAss_meta_t <- as.data.frame(t(no_hf183_crAss_meta))
+write.csv(no_hf183_crAss_meta, "../../data/Fecal_Contamination/output/no_hf183_crAss_meta.csv")
+```
+```{r}
+#Append hf183 sum, crAssphage to metagenome
+meta_fecal_levels_t <- cbind.data.frame(no_hf183_crAss_meta_t, fecal_levels)
+meta_fecal_levels <- as.data.frame(t(meta_fecal_levels_t))
+```
+```{r}
+#Check for number of 0s in sample
+table(meta_fecal_levels == 0)
+```
+```{r}
+#replace 0s with p-counts
+metagen_z <- cmultRepl((meta_fecal_levels), output = 'p-counts')
+```
+```{r}
+#Check to see if 0s have been removed
+table(metagen_z == 0)
+```
+```{r}
+#define clr function
+clr <- function(x) sweep(log(x), 1, rowMeans(log(x)), "-")
+```
+```{r}
+#transpose and run clr, convert both to data frame
+metagen_z_t <- t(metagen_z)
+fecal_clr_t <- clr(metagen_z_t)
+fecal_clr_t_df <- as.data.frame(fecal_clr_t)
+fecal_clr_df <- as.data.frame(t(fecal_clr_t))
+write.csv(fecal_clr_df, "../../data/Fecal_Contamination/output/fecal_clr_df_hf183_sum.csv")
+```
+```{r}
+#Isolate hf183_sum and crAssphage results, write out file
+fecal_clr_t_iso_df <- fecal_clr_t_df[rownames(fecal_clr_t_df),c('hf183_sum','crAssphage')]
+write.csv(fecal_clr_t_df, "../../data/Fecal_Contamination/output/fecal_clr_t_df_hf183_sum.csv")
+```
+```{r}
+#AOV on hf183 and crAss
+one.way <- aov(hf183_sum ~ crAssphage, data = fecal_clr_t_df)
+summary(one.way)
+```
+```{r}
+#Other species example
+test <- aov(`Halolamina sediminis` ~ crAssphage, data = fecal_clr_t_df)
+summary(test)
+```
+```{r}
+#Spearman correlation hf183 and crAssphage
+hf183_crAss_spearman <-cor.test(fecal_clr_t_df$hf183_sum, fecal_clr_t_df$crAssphage,  method = "spearman")
+hf183_crAss_spearman
+```
+```{r}
+#Try to fix this and do it based on date or site
+hf183_crAss_adonis <- adonis2(fecal_clr_t_df~hf183_sum, data=fecal_clr_t_df, permutations = 9999, method = "euclidian")
+hf183_crAss_adonis
+```
+```{r}
+#Other species example
+hf183_halolamina_spearman <-cor.test(fecal_clr_t_df$hf183_sum, fecal_clr_t_df$`Halolamina sediminis`,  method = "spearman")
+hf183_halolamina_spearman
+```
+```{r}
+#Kendall correlation hf183 and crAssphage
+hf183_crAss_kendall <-cor.test(fecal_clr_t_df$hf183_sum, fecal_clr_t_df$crAssphage,  method = "kendall")
+hf183_crAss_kendall
+```
+```{r}
+#Other species example
+hf183_halolamina_kendall <-cor.test(fecal_clr_t_df$hf183_sum, fecal_clr_t_df$`Halolamina sediminis`,  method = "kendall")
+hf183_halolamina_kendall
+```
+```{r}
+#Pearson correlation hf183 and crAssphage
+hf183_crAss_pearson <-cor.test(fecal_clr_t_df$hf183_sum, fecal_clr_t_df$crAssphage,  method = "pearson")
+hf183_crAss_pearson
+```
+```{r}
+#Other species example
+hf183_halolamina_pearson <-cor.test(fecal_clr_t_df$hf183_sum, fecal_clr_t_df$`Halolamina sediminis`,  method = "pearson")
+hf183_halolamina_pearson
+```
+Regression
+```{r}
+fecal.lm = lm(hf183_sum ~ crAssphage, data=fecal_clr_t_df) 
+fecal.res = resid(fecal.lm)
+```
+```{r}
+plot(fecal_clr_t_df$crAssphage, fecal.res, ylab="Residuals", xlab="crAssphage", main="hf183 and crAssphage")
+abline(0, 0)
+```
+```{r}
+plot(fecal_clr_t_df$hf183_sum, fecal_clr_t_df$crAssphage, pch = 16, cex = 1.3, col = "blue", main = "HF183 and crAssphage Regression", xlab = "HF183 Sum", ylab = "crAssphage")
+abline(lm(fecal_clr_t_df$crAssphage ~ fecal_clr_t_df$hf183_sum))
+```
+```{r}
+map <- read.table('../../data/Fecal_Contamination/input/TJRIVER_mappingfile.txt',sep='\t',header =1,row.names = 1)
+fecal_clr_t_iso_df_ordered <- fecal_clr_t_iso_df[order(row.names(fecal_clr_t_iso_df)), order(colnames(fecal_clr_t_iso_df))]
+map_ordered <- map[order(row.names(map)),order(colnames(map))]
+fecal_clr_t_iso_df_ordered$date = as.factor(map_ordered$date)
+fecal_clr_t_iso_df_ordered$number = as.factor(map_ordered$number)
+fecal_clr_t_iso_df_ordered$site = as.factor(map_ordered$site)
+eq <- function(x,y) {
+  m <- lm(y ~ x)
+  as.character(
+    as.expression(
+      substitute(~~italic(r)^2~"="~r2,
+                list(a = format(coef(m)[1], digits = 4),
+                b = format(coef(m)[2], digits = 4),
+                r2 = format(summary(m)$r.squared, digits = 3)))
+    )
+  )
+}
+hf183_crAss_regression_plot <- ggplot(fecal_clr_t_iso_df_ordered, aes(x = hf183_sum, y = crAssphage)) +
+  geom_point(size = 3, aes(colour = site, shape = date))+ 
+  geom_text(data = fecal_clr_t_iso_df_ordered,aes(x=hf183_sum,y=crAssphage,label=number),size=2,vjust=2)+
+  ggtitle('HF183 and crAssphage Regression')+
+  xlab("HF183 Sum") + ylab("crAssphage")+
+  geom_smooth(method = "lm", colour = "black", size = 0.5, se = FALSE)+
+  geom_text(x = 7, y = 7.5, label = eq(fecal_clr_t_iso_df_ordered$hf183_sum, fecal_clr_t_iso_df_ordered$crAssphage), parse = TRUE)+
+  theme(
+    plot.title = element_text(color="black", size=10, face="bold"),
+    panel.background = element_rect(fill = "white",
+                                    colour = "black",
+                                    size = 0.5, linetype = "solid"),
+  )
+hf183_crAss_regression_plot
+ggsave('../../data/Fecal_Contamination/output/Regression_TJ_River_metagen.png', width=6.5, height=4,plot=hf183_crAss_regression_plot)
+```
+```{r}
+regression <- lm(fecal_clr_t_df$crAssphage ~ fecal_clr_t_df$hf183_sum)
+summary(regression)
+```
