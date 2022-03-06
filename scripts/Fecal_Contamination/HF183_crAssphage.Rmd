@@ -27,7 +27,7 @@ library(data.table)
 #Read in metagenome, HF183 and crAssphage row names
 hf183_names <- read.csv('../../data/Fecal_Contamination/input/HF183_names.csv',sep=',',row.names = 1,header = 1,check.names=FALSE)
 crAss_name <- read.csv('../../data/Fecal_Contamination/input/crAssphage_name.csv',sep=',',row.names = 1,header = 1,check.names=FALSE)
-meta <- read.csv('../../data/Fecal_Contamination/input/metagenomemodified.csv',sep=',',row.names = 1,header = 1,check.names=FALSE)
+meta <- read.csv('../../data/Fecal_Contamination/input/metagenomemodified_with_viruses.csv',sep=',',row.names = 1,header = 1,check.names=FALSE)
 ```
 ```{r}
 #Extract data based on the row names
