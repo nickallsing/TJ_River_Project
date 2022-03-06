@@ -4,7 +4,7 @@ Permutation: free
 Number of permutations: 9999
 
 adonis2(formula = metag_dist ~ number, data = map_ordered, permutations = 9999, method = "euclidian")
-         Df SumOfSqs      R2     F Pr(>F)
-number    1   115096 0.03957 0.824 0.8741
-Residual 20  2793641 0.96043             
-Total    21  2908737 1.00000             
+         Df SumOfSqs      R2      F Pr(>F)
+number    1    94912 0.03931 0.8185  0.851
+Residual 20  2319315 0.96069              
+Total    21  2414227 1.00000              

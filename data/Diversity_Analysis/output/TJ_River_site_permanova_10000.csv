@@ -5,8 +5,8 @@ Number of permutations: 9999
 
 adonis2(formula = metag_dist ~ site, data = map_ordered, permutations = 9999, method = "euclidian")
          Df SumOfSqs      R2      F Pr(>F)   
-site      5   897874 0.30868 1.4288 0.0012 **
-Residual 16  2010863 0.69132                 
-Total    21  2908737 1.00000                 
+site      5   757512 0.31377 1.4632 0.0016 **
+Residual 16  1656715 0.68623                 
+Total    21  2414227 1.00000                 
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1

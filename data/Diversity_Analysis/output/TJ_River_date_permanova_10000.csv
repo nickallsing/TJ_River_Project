@@ -5,6 +5,6 @@ Number of permutations: 9999
 
 adonis2(formula = metag_dist ~ date, data = map_ordered, permutations = 9999, method = "euclidian")
          Df SumOfSqs      R2      F Pr(>F)
-date      3   415301 0.14278 0.9993 0.4236
-Residual 18  2493436 0.85722              
-Total    21  2908737 1.00000              
+date      3   343905 0.14245 0.9967 0.4275
+Residual 18  2070322 0.85755              
+Total    21  2414227 1.00000              
