@@ -1,6 +1,6 @@
 # TJ_River_Project
 ### This project has the overall goal of identifying, quantifying, and verifying the presence of microbes and viruses in the Tijuana River Basin.
-##### Sample data is included and can be removed to perform this project. Do not remove scripts or change their location. An R Markdown or Jupyter Notebook is supplied to run code or scripts in the correct order.
+##### Sample data is available through the European Nucleotide Archive Project: PRJEB57859 and Run Accessions are available in the mapping files. An R Markdown or Jupyter Notebook is supplied to run code or scripts in the correct order.
 ##### Theoretically, anyone should be able to input their data into the correct data folder and replicate my results as long as the files are labeled as described.
 ##### fastp_Kaiju_processing takes paired-end metagenomic sequencing reads, with R1 and R2 identifying read direction, quality controls, taxonomically classifies using Kaiju, creates OTU tables and modifies those OTU tables for use in R for analysis. Input is fastq.gz, output is kaiju .out files, kaiju .tsv files, OTU tables, and a final metagenomemodified.csv file that can be used with an associated mapping file for analysis in R.
 ##### Diversity_Analysis takes metagenomic data and a mapping file as input, performs a centered log-ratio (clr) transformation, and outputs a NMDS Plot and performs statistical analysis on the beta-diversity of the samples.
