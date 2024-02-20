@@ -1,0 +1,127 @@
+---
+title: "TJ_River_Alpha_Diversity"
+output: html_notebook
+---
+```{r}
+if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+```
+```{r}
+library(ggplot2)
+library(ggpubr)
+library(FSA)
+library(dunn.test)
+library(rstatix)
+library(dplyr)
+```
+### Run Qiime2 alpha diversity metrics on Feature Table. In this case, we have observed features, pielou_evenness, and shannon_entropy. Last column should be metadata, in this case - sample site name.
+### Import data
+```{r}
+alpha <- read.csv('./tj_river_alpha_diverity_qiime2.txt')
+```
+### Perform Dunn Test on features, evenness, and shannon
+```{r}
+attach(alpha)
+```
+```{r}
+dunn_of_list <- dunn.test(observed_features, site, altp = TRUE, table = FALSE, list = TRUE)
+dunn_of_df <- do.call(rbind.data.frame, dunn_of_list)
+dunn_of_df_t <- as.data.frame(t(dunn_of_df))
+dunn_of_df_t[, c(3)] <- sapply(dunn_of_df_t[, c(3)], as.numeric)
+dunn_of_df_t$Rounded = round(dunn_of_df_t$V3,4)
+```
+```{r}
+dunn_evenness_list <- dunn.test(evenness, site, altp = TRUE, table = FALSE, list = TRUE)
+dunn_evenness_df <- do.call(rbind.data.frame, dunn_evenness_list)
+dunn_evenness_df_t <- as.data.frame(t(dunn_evenness_df))
+dunn_evenness_df_t[, c(3)] <- sapply(dunn_evenness_df_t[, c(3)], as.numeric)
+dunn_evenness_df_t$Rounded = round(dunn_evenness_df_t$V3,4)
+```
+```{r}
+dunn_shannon_list <- dunn.test(shannon, site, altp = TRUE, table = FALSE, list = TRUE)
+dunn_shannon_df <- do.call(rbind.data.frame, dunn_shannon_list)
+dunn_shannon_df_t <- as.data.frame(t(dunn_shannon_df))
+dunn_shannon_df_t[, c(3)] <- sapply(dunn_shannon_df_t[, c(3)], as.numeric)
+dunn_shannon_df_t$Rounded = round(dunn_shannon_df_t$V3,4)
+```
+### Create statistical results tables
+```{r}
+stat.test <- tibble::tribble(
+  ~group1, ~group2, ~p,
+  "Boca Rio", "Goat Canyon", 0,
+  "Boca Rio", "Smuggler's Gulch", 0,
+  "Goat Canyon", "Smuggler's Gulch", 0,
+  "Boca Rio", "Stewart's Drain", 0,
+  "Goat Canyon", "Stewart's Drain", 0,
+  "Smuggler's Gulch", "Stewart's Drain", 0,
+  "Boca Rio", "TJ Channel", 0,
+  "Goat Canyon", "TJ Channel", 0,
+  "Smuggler's Gulch", "TJ Channel", 0,
+  "Stewart's Drain", "TJ Channel", 0,
+  "Boca Rio", "Yogurt Canyon", 0,
+  "Goat Canyon", "Yogurt Canyon", 0,
+  "Smuggler's Gulch", "Yogurt Canyon", 0,
+  "Stewart's Drain", "Yogurt Canyon", 0,
+  "TJ Channel", "Yogurt Canyon", 0
+)
+stat.test_of <- stat.test
+stat.test_of$p <- dunn_of_df_t$Rounded
+stat.test_evenness <- stat.test
+stat.test_evenness$p <- dunn_evenness_df_t$Rounded
+stat.test_shannon <- stat.test
+stat.test_shannon$p <- dunn_shannon_df_t$Rounded
+```
+### Create Observed Features Graph with statistical results
+```{r}
+#Observed Features at Sampling Site
+my_comparisons_of <- list( c("Boca Rio", "Smuggler's Gulch"))
+o_f_graph <- ggplot(alpha, aes(x=site, y=observed_features)) + theme_bw() + geom_boxplot(fill='white', lwd = 0.6) +
+  labs(title="",x="",y="Observed Features") +
+  geom_dotplot(binaxis='y', stackdir='center', dotsize=0.4) + rotate_x_text(angle = 45) +
+  theme(axis.text = element_text(face="bold", size = 9, colour = "grey20"),axis.title = element_text(face="bold", size=12),plot.title = element_text(face="bold"), panel.grid.major = element_line(size = 0.75, linetype = "solid")) + stat_pvalue_manual(
+    stat.test_of, 
+    y.position = 38500, step.increase = 0.1,
+    label = "p",
+    hide.ns = TRUE
+    )
+o_f_graph
+```
+### Create Evenness Graph with statistical results
+```{r}
+#Evenness at Sampling Site
+even_graph <- ggplot(alpha, aes(x=site, y=evenness)) + theme_bw() + geom_boxplot(fill='white', lwd = 0.6) +
+  labs(title="",x="",y="Evenness") +
+  geom_dotplot(binaxis='y', stackdir='center', dotsize=0.4) + rotate_x_text(angle = 45) +
+  theme(axis.text = element_text(face="bold", size = 9, colour = "grey20"),axis.title = element_text(face="bold", size=12),plot.title = element_text(face="bold"), panel.grid.major = element_line(size = 0.75, linetype = "solid")) + stat_pvalue_manual(
+    stat.test_evenness, 
+    y.position = 0.46, step.increase = 0.1,
+    label = "p",
+    hide.ns = TRUE
+    )
+even_graph
+```
+### Create Shannon Index Graph with statistical results
+```{r}
+#Shannon Index at Sampling Site
+s_i_graph <- ggplot(alpha, aes(x=site, y=shannon)) + theme_bw() + geom_boxplot(fill='white', lwd = 0.6) +
+  labs(title="",x="",y="Shannon Index") +
+  geom_dotplot(binaxis='y', stackdir='center', dotsize=0.4) + rotate_x_text(angle = 45) +
+  theme(axis.text = element_text(face="bold", size = 9, colour = "grey20"), axis.title = element_text(face="bold", size=12),plot.title = element_text(face="bold"), panel.grid.major = element_line(size = 0.75, linetype = "solid")) + stat_pvalue_manual(
+    stat.test_shannon, 
+    y.position = 6.8, step.increase = 0.1,
+    label = "p",
+    hide.ns = TRUE
+    )
+s_i_graph
+```
+### Create Combined Plot
+```{r}
+all_alpha_graph <- ggarrange(o_f_graph,even_graph,s_i_graph,
+                                    labels = c("A", "B", "C"),
+                                    ncol = 3, nrow = 1)
+all_alpha_graph
+```
+### Save Combined Plot
+```{r}
+ggsave('./tj_river_alpha_diverity_qiime2_all_alpha_graph.png',width=15, height=8, plot = all_alpha_graph)
+```
