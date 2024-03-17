@@ -46,7 +46,7 @@ table(metagen_OTU == 0)
 ```
 ```{r}
 #replace 0s with p-counts
-metagen_z <- cmultRepl((metagen_OTU), output = 'p-counts')
+metagen_z <- cmultRepl((metagen_OTU), output = 'p-counts', z.delete = FALSE)
 ```
 ```{r}
 #Check to see if 0s have been removed
